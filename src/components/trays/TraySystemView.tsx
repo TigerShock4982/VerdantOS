@@ -3,6 +3,8 @@ import { AssetImage } from "@/components/ui/AssetImage";
 import { TRAY_LANES } from "@/lib/mock-data";
 import styles from "@/components/trays/TraySystemView.module.css";
 
+const TRAY_FALLBACK = "\uD83E\uDDFA";
+
 export function TraySystemView() {
   const allTrays = TRAY_LANES.flatMap((lane) => lane.trays);
   const activeCount = allTrays.filter((tray) => tray.state !== "Empty").length;
@@ -50,7 +52,7 @@ export function TraySystemView() {
 
               <div className={styles.trackMeta}>
                 <span className={styles.directionPill}>
-                  {lane.direction === "forward" ? "Left → Right" : "Right → Left"}
+                  {lane.direction === "forward" ? "Left to Right" : "Right to Left"}
                 </span>
                 <span className={styles.speedPill}>{lane.speedSeconds}s cycle</span>
               </div>
@@ -65,15 +67,38 @@ export function TraySystemView() {
                 style={{ "--duration": `${lane.speedSeconds}s` } as CSSProperties}
               >
                 {lane.trays.concat(lane.trays).map((tray, index) => (
-                  <div key={`${lane.id}-${tray.id}-${index}`} className={styles.trayCard}>
+                  <div
+                    key={`${lane.id}-${tray.id}-${index}`}
+                    className={styles.trayCard}
+                    style={
+                      {
+                        "--chamber-level": `${
+                          tray.state === "Empty"
+                            ? 28
+                            : tray.state === "Harvesting"
+                              ? 56
+                              : 72
+                        }%`,
+                      } as CSSProperties
+                    }
+                  >
                     <div className={styles.trayVisual}>
+                      <div className={styles.visualLabel}>Water chamber</div>
+                      <div className={styles.chamberShell}>
+                        <div className={styles.chamberWater}>
+                          <span className={styles.surfaceLine} />
+                          <span className={styles.surfaceGlow} />
+                        </div>
+                        <div className={styles.bubbleOne} />
+                        <div className={styles.bubbleTwo} />
                       <AssetImage
                         src="/images/tray.png"
                         alt="Tray asset"
-                        fallback="📦"
+                        fallback={TRAY_FALLBACK}
                         className={styles.trayImage}
                         fallbackClassName={`${styles.trayImage} assetFallback`}
                       />
+                      </div>
                     </div>
 
                     <div className={styles.trayMeta}>

@@ -1,17 +1,15 @@
 .wrap {
   position: sticky;
-  top: 0;
+  top: 0.5rem;
   z-index: 40;
 }
 
 .bar {
   width: min(100%, var(--max-width));
   margin: 0 auto;
-  padding: 0.95rem 1.15rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.85rem;
   background: rgba(7, 22, 34, 0.82);
 }
 
@@ -19,7 +17,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.9rem;
-  min-width: max-content;
+  min-width: 0;
 }
 
 .logo {
@@ -42,20 +40,34 @@
 }
 
 .nav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.65rem;
+  position: fixed;
+  left: 0.8rem;
+  right: 0.8rem;
+  bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border-radius: 1.6rem;
+  border: 1px solid rgba(129, 181, 255, 0.12);
+  background: rgba(6, 19, 29, 0.9);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 18px 40px rgba(1, 10, 18, 0.5);
 }
 
 .navItem {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex-direction: column;
   gap: 0.6rem;
-  padding: 0.8rem 1rem;
-  border-radius: 999px;
+  min-height: 4.25rem;
+  padding: 0.75rem 0.55rem;
+  border-radius: 1.2rem;
   color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
   transition:
     background 180ms ease,
     color 180ms ease,
@@ -84,11 +96,9 @@
 }
 
 .actions {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
-  min-width: max-content;
 }
 
 .readinessBadge,
@@ -115,37 +125,61 @@
   background: rgba(111, 247, 195, 0.12);
 }
 
-@media (max-width: 1180px) {
-  .bar {
-    flex-wrap: wrap;
-  }
-
-  .brand,
-  .actions,
-  .nav {
-    width: 100%;
-  }
-
-  .nav {
-    justify-content: space-between;
-  }
-
-  .actions {
-    justify-content: space-between;
+@media (max-width: 420px) {
+  .readinessBadge {
+    display: none;
   }
 }
 
-@media (max-width: 720px) {
+@media (min-width: 980px) {
+  .wrap {
+    top: 0;
+  }
+
+  .bar {
+    padding: 0.95rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .brand {
+    min-width: max-content;
+  }
+
   .nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .navItem {
-    justify-content: center;
+    min-height: auto;
+    flex-direction: row;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    font-size: 1rem;
   }
 
   .actions {
-    flex-wrap: wrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    min-width: max-content;
+    grid-template-columns: none;
   }
 }

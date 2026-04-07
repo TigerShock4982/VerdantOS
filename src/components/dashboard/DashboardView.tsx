@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { SensorCard } from "@/components/dashboard/SensorCard";
 import { AssetImage } from "@/components/ui/AssetImage";
@@ -8,12 +9,20 @@ import { formatMetric, formatTimestamp } from "@/lib/format";
 import { FARMS, getFarmById } from "@/lib/mock-data";
 import styles from "@/components/dashboard/DashboardView.module.css";
 
+const AIR_FALLBACK = "\uD83C\uDF2C\uFE0F";
+const WATER_FALLBACK = "\uD83D\uDCA7";
+const LIGHT_FALLBACK = "\uD83D\uDCA1";
+const LOGO_FALLBACK = "\uD83C\uDF3F";
+const TRAY_FALLBACK = "\uD83E\uDDFA";
+const DEGREE_C = "\u00B0C";
+
 export function DashboardView() {
   const [activeFarmId, setActiveFarmId] = useState(FARMS[0].id);
   const farm = getFarmById(activeFarmId);
   const { snapshot, lastUpdate, isOnline, liveStatus } = useFarmTelemetry(activeFarmId);
 
   const brightness = Math.min(100, Math.round((snapshot.light.lux / 7800) * 100));
+  const waterLevel = Math.min(82, Math.max(34, snapshot.water.level));
 
   const sensorCards = useMemo(
     () => [
@@ -21,10 +30,10 @@ export function DashboardView() {
         title: "Air",
         subtitle: "Canopy climate and atmospheric stability.",
         icon: "/images/air-icon.svg",
-        fallback: "🌬️",
+        fallback: AIR_FALLBACK,
         accent: "cyan" as const,
         heroLabel: "Air Temperature",
-        heroValue: formatMetric(snapshot.air.temperature, "°C", 1),
+        heroValue: formatMetric(snapshot.air.temperature, DEGREE_C, 1),
         trend: "Humidity and pressure remain inside cultivation band.",
         metrics: [
           {
@@ -45,11 +54,41 @@ export function DashboardView() {
         title: "Water",
         subtitle: "Nutrient loop chemistry and reservoir condition.",
         icon: "/images/water-icon.svg",
-        fallback: "💧",
+        fallback: WATER_FALLBACK,
         accent: "teal" as const,
         heroLabel: "Water Temperature",
-        heroValue: formatMetric(snapshot.water.temperature, "°C", 1),
+        heroValue: formatMetric(snapshot.water.temperature, DEGREE_C, 1),
         trend: "Reservoir chemistry is tracking current feed targets.",
+        visual: (
+          <div
+            className={styles.waterChamber}
+            style={{ "--water-level": `${waterLevel}%` } as CSSProperties}
+          >
+            <div className={styles.chamberHeader}>
+              <span>Water chamber</span>
+              <strong>{formatMetric(snapshot.water.level, "%", 0)}</strong>
+            </div>
+            <div className={styles.chamberTank}>
+              <div className={styles.chamberOverlay} />
+              <div className={styles.chamberWater}>
+                <span className={styles.chamberWave} />
+                <span className={styles.chamberWaveAlt} />
+              </div>
+              <AssetImage
+                src="/images/tray.png"
+                alt="Tray seated in nutrient bath"
+                fallback={TRAY_FALLBACK}
+                className={styles.chamberTray}
+                fallbackClassName={`${styles.chamberTray} assetFallback`}
+              />
+            </div>
+            <div className={styles.chamberStats}>
+              <span>{formatMetric(snapshot.water.ph, "", 2)} pH</span>
+              <span>{formatMetric(snapshot.water.ec, "mS/cm", 2)} EC</span>
+              <span>Recirculation stable</span>
+            </div>
+          </div>
+        ),
         metrics: [
           {
             label: "pH",
@@ -75,7 +114,7 @@ export function DashboardView() {
         title: "Light",
         subtitle: "Photonic output across the active grow canopy.",
         icon: "/images/light-icon.svg",
-        fallback: "💡",
+        fallback: LIGHT_FALLBACK,
         accent: "lime" as const,
         heroLabel: "Light Intensity",
         heroValue: formatMetric(snapshot.light.lux, "lx", 0),
@@ -96,7 +135,7 @@ export function DashboardView() {
         ],
       },
     ],
-    [brightness, snapshot],
+    [brightness, snapshot, waterLevel],
   );
 
   return (
@@ -107,7 +146,7 @@ export function DashboardView() {
             <AssetImage
               src="/images/sprout-logo.webp"
               alt="VerdantOS farm logo"
-              fallback="🌿"
+              fallback={LOGO_FALLBACK}
               className={styles.heroLogo}
               fallbackClassName={`${styles.heroLogo} assetFallback`}
             />
@@ -115,7 +154,7 @@ export function DashboardView() {
               <span className="eyebrow">Farm identity</span>
               <h1 className={styles.identityTitle}>{farm.name}</h1>
               <p className={styles.identitySubtitle}>
-                {farm.zone} · {farm.deviceLabel} · {farm.cultivarFocus}
+                {farm.zone} / {farm.deviceLabel} / {farm.cultivarFocus}
               </p>
             </div>
           </div>

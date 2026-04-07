@@ -1,14 +1,14 @@
 .shell {
   position: relative;
   min-height: 100vh;
-  padding: 1.2rem clamp(1rem, 2.8vw, 2rem) 3rem;
+  padding: 0.8rem 0.8rem calc(6.6rem + env(safe-area-inset-bottom, 0px));
 }
 
 .main {
   position: relative;
   z-index: 1;
   width: min(100%, var(--max-width));
-  margin: 1.6rem auto 0;
+  margin: 1rem auto 0;
 }
 
 .orbOne,
@@ -21,17 +21,40 @@
 }
 
 .orbOne {
-  top: 6rem;
-  left: -8rem;
-  width: 18rem;
-  height: 18rem;
+  top: 3rem;
+  left: -9rem;
+  width: 13rem;
+  height: 13rem;
   background: rgba(103, 223, 255, 0.11);
 }
 
 .orbTwo {
   right: -6rem;
-  bottom: 18%;
-  width: 16rem;
-  height: 16rem;
+  bottom: 10%;
+  width: 12rem;
+  height: 12rem;
   background: rgba(111, 247, 195, 0.12);
+}
+
+@media (min-width: 980px) {
+  .shell {
+    padding: 1.2rem clamp(1rem, 2.8vw, 2rem) 3rem;
+  }
+
+  .main {
+    margin-top: 1.6rem;
+  }
+
+  .orbOne {
+    top: 6rem;
+    left: -8rem;
+    width: 18rem;
+    height: 18rem;
+  }
+
+  .orbTwo {
+    bottom: 18%;
+    width: 16rem;
+    height: 16rem;
+  }
 }
