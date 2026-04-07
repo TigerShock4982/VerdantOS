@@ -67,37 +67,19 @@ export function TraySystemView() {
                 style={{ "--duration": `${lane.speedSeconds}s` } as CSSProperties}
               >
                 {lane.trays.concat(lane.trays).map((tray, index) => (
-                  <div
-                    key={`${lane.id}-${tray.id}-${index}`}
-                    className={styles.trayCard}
-                    style={
-                      {
-                        "--chamber-level": `${
-                          tray.state === "Empty"
-                            ? 28
-                            : tray.state === "Harvesting"
-                              ? 56
-                              : 72
-                        }%`,
-                      } as CSSProperties
-                    }
-                  >
+                  <div key={`${lane.id}-${tray.id}-${index}`} className={styles.trayCard}>
                     <div className={styles.trayVisual}>
-                      <div className={styles.visualLabel}>Water chamber</div>
-                      <div className={styles.chamberShell}>
-                        <div className={styles.chamberWater}>
-                          <span className={styles.surfaceLine} />
-                          <span className={styles.surfaceGlow} />
-                        </div>
-                        <div className={styles.bubbleOne} />
-                        <div className={styles.bubbleTwo} />
-                      <AssetImage
-                        src="/images/tray.png"
-                        alt="Tray asset"
-                        fallback={TRAY_FALLBACK}
-                        className={styles.trayImage}
-                        fallbackClassName={`${styles.trayImage} assetFallback`}
-                      />
+                      <div className={styles.trayShell}>
+                        <span className={styles.trayRailTop} />
+                        <span className={styles.trayRailBottom} />
+                        <AssetImage
+                          src="/images/tray.png"
+                          alt="Tray asset"
+                          fallback={TRAY_FALLBACK}
+                          className={styles.trayImage}
+                          fallbackClassName={`${styles.trayImage} assetFallback`}
+                        />
+                        <span className={styles.trayShadow} />
                       </div>
                     </div>
 

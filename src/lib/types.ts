@@ -3,6 +3,7 @@ export type LiveStatus = "live" | "cached";
 export type HistoryRange = "24h" | "72h" | "7d";
 export type TrayState = "Growing" | "Harvesting" | "Empty";
 export type LaneDirection = "forward" | "reverse";
+export type FloatSensorState = 0 | 1;
 
 export interface FarmIdentity {
   id: string;
@@ -16,8 +17,11 @@ export interface FarmIdentity {
 
 export interface TelemetrySnapshot {
   farmId: string;
+  deviceId: string;
+  sequence: number;
   timestamp: string;
   connectionState: ConnectionState;
+  rawEvent: SensorEventPayload;
   air: {
     temperature: number;
     humidity: number;
@@ -28,6 +32,7 @@ export interface TelemetrySnapshot {
     ph: number;
     ec: number;
     level: number;
+    levelFloat: FloatSensorState;
   };
   light: {
     lux: number;
@@ -51,4 +56,27 @@ export interface TrayLane {
   direction: LaneDirection;
   speedSeconds: number;
   trays: TrayUnit[];
+}
+
+export interface SensorEventPayload {
+  type: "sensor";
+  ts: string;
+  device: string;
+  seq: number;
+  air: {
+    t_c: number;
+    rh_pct: number;
+    p_hpa: number;
+  };
+  water: {
+    t_c: number;
+    ph: number;
+    ec_ms_cm: number;
+  };
+  light: {
+    lux: number;
+  };
+  level: {
+    float: FloatSensorState;
+  };
 }

@@ -1,7 +1,7 @@
 .shell {
   position: relative;
   min-height: 100vh;
-  padding: 0.8rem 0.8rem calc(6.6rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.8rem 0.8rem calc(7rem + env(safe-area-inset-bottom, 0px));
 }
 
 .main {
@@ -38,7 +38,7 @@
 
 @media (min-width: 980px) {
   .shell {
-    padding: 1.2rem clamp(1rem, 2.8vw, 2rem) 3rem;
+    padding: 1.2rem clamp(1rem, 2.8vw, 2rem) calc(7rem + env(safe-area-inset-bottom, 0px));
   }
 
   .main {

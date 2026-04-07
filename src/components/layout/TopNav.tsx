@@ -6,30 +6,36 @@ import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { AssetImage } from "@/components/ui/AssetImage";
 import styles from "@/components/layout/TopNav.module.css";
 
+const DASHBOARD_FALLBACK = "\uD83E\uDDED";
+const HISTORY_FALLBACK = "\uD83D\uDCC8";
+const TRAYS_FALLBACK = "\uD83D\uDEE4\uFE0F";
+const CONFIG_FALLBACK = "\u2699\uFE0F";
+const LOGO_FALLBACK = "\uD83C\uDF3F";
+
 const navItems = [
   {
     href: "/",
     label: "Dashboard",
     icon: "/images/dashboard-icon.svg",
-    fallback: "🧭",
+    fallback: DASHBOARD_FALLBACK,
   },
   {
     href: "/history",
     label: "History",
     icon: "/images/history-icon.svg",
-    fallback: "📈",
+    fallback: HISTORY_FALLBACK,
   },
   {
     href: "/trays",
     label: "Trays",
     icon: "/images/trays-icon.svg",
-    fallback: "🛤️",
+    fallback: TRAYS_FALLBACK,
   },
   {
     href: "/config",
     label: "Config",
     icon: "/images/config-icon.svg",
-    fallback: "⚙️",
+    fallback: CONFIG_FALLBACK,
   },
 ];
 
@@ -38,12 +44,12 @@ export function TopNav() {
 
   return (
     <header className={styles.wrap}>
-      <div className={`glassPanel ${styles.bar}`}>
+      <div className={`glassPanel ${styles.topBar}`}>
         <Link href="/" className={styles.brand}>
           <AssetImage
             src="/images/sprout-logo.webp"
             alt="VerdantOS logo"
-            fallback="🌿"
+            fallback={LOGO_FALLBACK}
             className={styles.logo}
             fallbackClassName={`${styles.logo} assetFallback`}
           />
@@ -53,35 +59,35 @@ export function TopNav() {
           </div>
         </Link>
 
-        <nav className={styles.nav}>
-          {navItems.map((item) => {
-            const isActive =
-              item.href === "/" ? pathname === item.href : pathname.startsWith(item.href);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
-              >
-                <AssetImage
-                  src={item.icon}
-                  alt={`${item.label} icon`}
-                  fallback={item.fallback}
-                  className={styles.navIcon}
-                  fallbackClassName={`${styles.navIcon} assetFallback`}
-                />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
         <div className={styles.actions}>
           <span className={styles.readinessBadge}>Offline shell ready</span>
           <InstallAppButton className={styles.installButton} />
         </div>
       </div>
+
+      <nav className={styles.bottomDock}>
+        {navItems.map((item) => {
+          const isActive =
+            item.href === "/" ? pathname === item.href : pathname.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+            >
+              <AssetImage
+                src={item.icon}
+                alt={`${item.label} icon`}
+                fallback={item.fallback}
+                className={styles.navIcon}
+                fallbackClassName={`${styles.navIcon} assetFallback`}
+              />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }

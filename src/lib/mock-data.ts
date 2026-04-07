@@ -1,7 +1,9 @@
 import type {
   FarmIdentity,
+  FloatSensorState,
   HistoryPoint,
   HistoryRange,
+  SensorEventPayload,
   TelemetrySnapshot,
   TrayLane,
   TrayState,
@@ -70,66 +72,164 @@ function hashSeed(value: string) {
   }, 0);
 }
 
-function buildSnapshot(farmId: string, phaseIndex: number, timestamp: Date): TelemetrySnapshot {
-  const seed = hashSeed(farmId) % 23;
-  const primaryWave = Math.sin((phaseIndex + seed) / 5.2);
-  const secondaryWave = Math.cos((phaseIndex + seed) / 3.4);
-  const tertiaryWave = Math.sin((phaseIndex + seed) / 1.8);
+function createSeededRandom(seed: number) {
+  let state = seed % 2147483647;
 
-  const airTemperature = round(23.8 + primaryWave * 1.35 + tertiaryWave * 0.28 + seed * 0.02, 1);
-  const humidity = round(clamp(61 + secondaryWave * 6.2 + primaryWave * 2.1, 48, 78), 0);
-  const pressure = round(1011.4 + secondaryWave * 3.6 + tertiaryWave * 1.4, 1);
+  if (state <= 0) {
+    state += 2147483646;
+  }
 
-  const waterTemperature = round(19.4 + primaryWave * 0.8 + tertiaryWave * 0.18, 1);
-  const ph = round(clamp(5.96 + tertiaryWave * 0.17 + secondaryWave * 0.04, 5.4, 6.5), 2);
-  const ec = round(clamp(1.68 + secondaryWave * 0.18 + primaryWave * 0.05, 1.2, 2.3), 2);
-  const level = round(clamp(74 + primaryWave * 8.5 - tertiaryWave * 3.5, 48, 96), 0);
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+}
 
-  const lux = round(clamp(6280 + primaryWave * 980 + secondaryWave * 480, 3300, 8600), 0);
+function randomBetween(nextRandom: () => number, min: number, max: number, precision = 2) {
+  return round(min + (max - min) * nextRandom(), precision);
+}
 
+function randomInteger(nextRandom: () => number, min: number, max: number) {
+  return Math.round(min + (max - min) * nextRandom());
+}
+
+function toIsoWithOffset(date: Date) {
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absoluteMinutes = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absoluteMinutes / 60)).padStart(2, "0");
+  const offsetRemainingMinutes = String(absoluteMinutes % 60).padStart(2, "0");
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${sign}${offsetHours}:${offsetRemainingMinutes}`;
+}
+
+function mapDeviceId(farmId: string) {
+  return `${farmId}-esp32-1`;
+}
+
+function buildReservoirPercent(levelFloat: FloatSensorState, nextRandom: () => number) {
+  return levelFloat === 1
+    ? round(68 + nextRandom() * 24, 0)
+    : round(14 + nextRandom() * 26, 0);
+}
+
+export class MockSensorGenerator {
+  private readonly deviceId: string;
+  private sequence = 0;
+
+  constructor(deviceId = "farm-esp32-1") {
+    this.deviceId = deviceId;
+  }
+
+  generate(timestamp: Date): SensorEventPayload {
+    this.sequence += 1;
+    const eventSeed = hashSeed(`${this.deviceId}:${this.sequence}:${timestamp.getTime()}`);
+    const nextRandom = createSeededRandom(eventSeed);
+
+    return {
+      type: "sensor",
+      ts: toIsoWithOffset(timestamp),
+      device: this.deviceId,
+      seq: this.sequence,
+      air: {
+        t_c: randomBetween(nextRandom, 22.0, 26.0, 2),
+        rh_pct: randomBetween(nextRandom, 45.0, 65.0, 2),
+        p_hpa: randomBetween(nextRandom, 1000.0, 1015.0, 2),
+      },
+      water: {
+        t_c: randomBetween(nextRandom, 18.0, 22.0, 2),
+        ph: randomBetween(nextRandom, 5.8, 6.8, 2),
+        ec_ms_cm: randomBetween(nextRandom, 1.0, 1.8, 2),
+      },
+      light: {
+        lux: randomInteger(nextRandom, 200, 800),
+      },
+      level: {
+        float: nextRandom() > 0.24 ? 1 : 0,
+      },
+    };
+  }
+}
+
+function mapEventToTelemetrySnapshot(
+  farmId: string,
+  event: SensorEventPayload,
+  nextRandom: () => number,
+): TelemetrySnapshot {
   return {
     farmId,
-    timestamp: timestamp.toISOString(),
+    deviceId: event.device,
+    sequence: event.seq,
+    timestamp: event.ts,
     connectionState: "online",
+    rawEvent: event,
     air: {
-      temperature: airTemperature,
-      humidity,
-      pressure,
+      temperature: event.air.t_c,
+      humidity: event.air.rh_pct,
+      pressure: event.air.p_hpa,
     },
     water: {
-      temperature: waterTemperature,
-      ph,
-      ec,
-      level,
+      temperature: event.water.t_c,
+      ph: event.water.ph,
+      ec: event.water.ec_ms_cm,
+      level: buildReservoirPercent(event.level.float, nextRandom),
+      levelFloat: event.level.float,
     },
     light: {
-      lux,
+      lux: event.light.lux,
     },
   };
 }
 
 export function buildHistoricalSeries(farmId: string, hours = 168): HistoryPoint[] {
   const now = Date.now();
+  const rawEvents = buildHistoricalSensorEvents(farmId, hours, now);
+
+  return rawEvents.map((event, index) => ({
+    index,
+    ...mapEventToTelemetrySnapshot(
+      farmId,
+      event,
+      createSeededRandom(hashSeed(`${farmId}:${event.seq}:reservoir`)),
+    ),
+  }));
+}
+
+export function buildLiveTelemetry(farmId: string, frames = 30): TelemetrySnapshot[] {
+  return buildLiveSensorEvents(farmId, frames).map((event) =>
+    mapEventToTelemetrySnapshot(
+      farmId,
+      event,
+      createSeededRandom(hashSeed(`${farmId}:${event.seq}:reservoir`)),
+    ),
+  );
+}
+
+export function buildHistoricalSensorEvents(farmId: string, hours = 168, now = Date.now()) {
+  const generator = new MockSensorGenerator(mapDeviceId(farmId));
 
   return Array.from({ length: hours }, (_, index) => {
     const hoursBack = hours - index - 1;
     const timestamp = new Date(now - hoursBack * 60 * 60 * 1000);
-    const snapshot = buildSnapshot(farmId, index, timestamp);
-
-    return {
-      index,
-      ...snapshot,
-    };
+    return generator.generate(timestamp);
   });
 }
 
-export function buildLiveTelemetry(farmId: string, frames = 30): TelemetrySnapshot[] {
-  const now = Date.now();
+export function buildLiveSensorEvents(farmId: string, frames = 30, now = Date.now()) {
+  const generator = new MockSensorGenerator(mapDeviceId(farmId));
 
   return Array.from({ length: frames }, (_, index) => {
     const minutesBack = frames - index - 1;
     const timestamp = new Date(now - minutesBack * 4 * 60 * 1000);
-    return buildSnapshot(farmId, 200 + index, timestamp);
+    return generator.generate(timestamp);
   });
 }
 
@@ -179,4 +279,9 @@ export const TRAY_LANES: TrayLane[] = [
 
 export function getFarmById(farmId: string) {
   return FARMS.find((farm) => farm.id === farmId) ?? FARMS[0];
+}
+
+export function getSharedTrayWaterLevel(farmId = FARMS[0].id) {
+  const telemetry = buildLiveTelemetry(farmId, 1)[0];
+  return clamp(telemetry.water.level, 20, 90);
 }

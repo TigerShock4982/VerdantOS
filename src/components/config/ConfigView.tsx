@@ -1,16 +1,26 @@
 import { AssetImage } from "@/components/ui/AssetImage";
 import styles from "@/components/config/ConfigView.module.css";
 
+const NOTICE_FALLBACK = "\u26A0\uFE0F";
+
 const modules = [
   {
     title: "Telemetry Ingress",
     description: "Prepared for live ESP32 payload ingestion, validation, and farm routing.",
-    lines: ["MQTT / HTTP bridge mapping", "Sensor identity registry", "Offline queue and retry policy"],
+    lines: [
+      "MQTT / HTTP bridge mapping",
+      "Sensor identity registry",
+      "Offline queue and retry policy",
+    ],
   },
   {
     title: "Tray Controls",
     description: "Reserved for actuator commands, conveyor timing, and tray allocation logic.",
-    lines: ["Lane motion profiles", "Tray state transitions", "Operator safety interlocks"],
+    lines: [
+      "Lane motion profiles",
+      "Tray state transitions",
+      "Operator safety interlocks",
+    ],
   },
   {
     title: "Farm Parameters",
@@ -41,7 +51,7 @@ export function ConfigView() {
           <AssetImage
             src="/images/alert-danger.webp"
             alt="Configuration readiness"
-            fallback="⚠️"
+            fallback={NOTICE_FALLBACK}
             className={styles.noticeImage}
             fallbackClassName={`${styles.noticeImage} assetFallback`}
           />

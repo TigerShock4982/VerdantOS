@@ -19,6 +19,9 @@ import type { HistoryRange } from "@/lib/types";
 import styles from "@/components/history/HistoryView.module.css";
 
 const rangeOptions: HistoryRange[] = ["24h", "72h", "7d"];
+const DEGREE_C = "\u00B0C";
+const RANGE_ARROW = "\u2192";
+const MID_DOT = "\u00B7";
 
 export function HistoryView() {
   const [activeFarmId, setActiveFarmId] = useState(FARMS[0].id);
@@ -43,27 +46,27 @@ export function HistoryView() {
     return [
       {
         label: "Climate average",
-        value: `${formatMetric(average(airTemp), "°C", 1)} · ${formatMetric(average(humidity), "%", 0)}`,
+        value: `${formatMetric(average(airTemp), DEGREE_C, 1)} ${MID_DOT} ${formatMetric(average(humidity), "%", 0)}`,
         detail: "Average air temperature and humidity",
       },
       {
         label: "Pressure band",
-        value: `${formatMetric(minimum(pressure), "hPa", 1)} → ${formatMetric(maximum(pressure), "hPa", 1)}`,
+        value: `${formatMetric(minimum(pressure), "hPa", 1)} ${RANGE_ARROW} ${formatMetric(maximum(pressure), "hPa", 1)}`,
         detail: "Observed atmospheric swing",
       },
       {
         label: "Nutrient chemistry",
-        value: `${formatMetric(average(waterPh), "", 2)} pH · ${formatMetric(maximum(waterEc), "mS/cm", 2)}`,
+        value: `${formatMetric(average(waterPh), "", 2)} pH ${MID_DOT} ${formatMetric(maximum(waterEc), "mS/cm", 2)}`,
         detail: "Average pH and peak EC",
       },
       {
         label: "Reservoir reserve",
-        value: `${formatMetric(average(waterTemp), "°C", 1)} · ${formatMetric(minimum(waterLevel), "%", 0)}`,
+        value: `${formatMetric(average(waterTemp), DEGREE_C, 1)} ${MID_DOT} ${formatMetric(minimum(waterLevel), "%", 0)}`,
         detail: "Average water temp and minimum level",
       },
       {
         label: "Dataset density",
-        value: `${formatInteger(data.length)} pts · ${formatMetric(maximum(lux), "lx", 0)}`,
+        value: `${formatInteger(data.length)} pts ${MID_DOT} ${formatMetric(maximum(lux), "lx", 0)}`,
         detail: "Captured points and peak lux",
       },
     ];
@@ -78,7 +81,7 @@ export function HistoryView() {
           key: "air.temperature",
           label: "Air Temp",
           color: "#67dfff",
-          unit: "°C",
+          unit: DEGREE_C,
           precision: 1,
           axisId: "left" as const,
         },
@@ -114,7 +117,7 @@ export function HistoryView() {
           key: "water.temperature",
           label: "Water Temp",
           color: "#67dfff",
-          unit: "°C",
+          unit: DEGREE_C,
           precision: 1,
           axisId: "left" as const,
         },

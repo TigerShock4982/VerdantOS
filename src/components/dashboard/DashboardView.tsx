@@ -22,7 +22,8 @@ export function DashboardView() {
   const { snapshot, lastUpdate, isOnline, liveStatus } = useFarmTelemetry(activeFarmId);
 
   const brightness = Math.min(100, Math.round((snapshot.light.lux / 7800) * 100));
-  const waterLevel = Math.min(82, Math.max(34, snapshot.water.level));
+  const reservoirLevel = Math.min(92, Math.max(12, snapshot.water.level));
+  const reservoirHealthy = snapshot.water.level >= 50;
 
   const sensorCards = useMemo(
     () => [
@@ -58,34 +59,63 @@ export function DashboardView() {
         accent: "teal" as const,
         heroLabel: "Water Temperature",
         heroValue: formatMetric(snapshot.water.temperature, DEGREE_C, 1),
-        trend: "Reservoir chemistry is tracking current feed targets.",
+        trend: "Reservoir volume and nutrient chemistry are tracking feed targets.",
         visual: (
           <div
             className={styles.waterChamber}
-            style={{ "--water-level": `${waterLevel}%` } as CSSProperties}
+            style={{ "--reservoir-level": `${reservoirLevel}%` } as CSSProperties}
           >
             <div className={styles.chamberHeader}>
-              <span>Water chamber</span>
-              <strong>{formatMetric(snapshot.water.level, "%", 0)}</strong>
-            </div>
-            <div className={styles.chamberTank}>
-              <div className={styles.chamberOverlay} />
-              <div className={styles.chamberWater}>
-                <span className={styles.chamberWave} />
-                <span className={styles.chamberWaveAlt} />
+              <span>Reservoir volume</span>
+              <div
+                className={`${styles.reservoirStatus} ${
+                  reservoirHealthy ? styles.reserveGood : styles.reserveLow
+                }`}
+              >
+                <span className="statusDot" />
+                <strong>{reservoirHealthy ? "Enough water" : "Refill soon"}</strong>
               </div>
-              <AssetImage
-                src="/images/tray.png"
-                alt="Tray seated in nutrient bath"
-                fallback={TRAY_FALLBACK}
-                className={styles.chamberTray}
-                fallbackClassName={`${styles.chamberTray} assetFallback`}
-              />
+            </div>
+            <div className={styles.waterSystemGrid}>
+              <div className={styles.reservoirBlock}>
+                <span className={styles.visualLabel}>Main reservoir</span>
+                <div className={styles.reservoirTank}>
+                  <div className={styles.reservoirColumn}>
+                    <div className={styles.reservoirThreshold}>
+                      <span className={styles.reservoirThresholdLine} />
+                      <span className={styles.reservoirThresholdLabel}>50% minimum</span>
+                    </div>
+                    <div className={styles.reservoirFill}>
+                      <span className={styles.chamberWave} />
+                      <span className={styles.chamberWaveAlt} />
+                    </div>
+                  </div>
+                  <div className={styles.reservoirScale}>
+                    <span>100</span>
+                    <span>50</span>
+                    <span>0</span>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.trayDock}>
+                <span className={styles.visualLabel}>Nutrient tray bay</span>
+                <div className={styles.trayDockShell}>
+                  <div className={styles.trayDockGlow} />
+                  <AssetImage
+                    src="/images/tray.png"
+                    alt="Tray docked in the nutrient bay"
+                    fallback={TRAY_FALLBACK}
+                    className={styles.chamberTray}
+                    fallbackClassName={`${styles.chamberTray} assetFallback`}
+                  />
+                </div>
+              </div>
             </div>
             <div className={styles.chamberStats}>
+              <span>{formatMetric(snapshot.water.level, "%", 0)} volume</span>
               <span>{formatMetric(snapshot.water.ph, "", 2)} pH</span>
               <span>{formatMetric(snapshot.water.ec, "mS/cm", 2)} EC</span>
-              <span>Recirculation stable</span>
+              <span>{snapshot.water.levelFloat === 1 ? "Float high" : "Float low"}</span>
             </div>
           </div>
         ),
@@ -105,7 +135,7 @@ export function DashboardView() {
           {
             label: "Water Level",
             value: formatMetric(snapshot.water.level, "%", 0),
-            hint: "Reserve volume ready for next tray wave",
+            hint: "Main reservoir reserve for the recirculation loop",
             tone: "watch" as const,
           },
         ],
@@ -135,7 +165,7 @@ export function DashboardView() {
         ],
       },
     ],
-    [brightness, snapshot, waterLevel],
+    [brightness, reservoirHealthy, reservoirLevel, snapshot],
   );
 
   return (
