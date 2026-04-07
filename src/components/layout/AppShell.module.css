@@ -1,0 +1,37 @@
+.shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 1.2rem clamp(1rem, 2.8vw, 2rem) 3rem;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  width: min(100%, var(--max-width));
+  margin: 1.6rem auto 0;
+}
+
+.orbOne,
+.orbTwo {
+  position: fixed;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.orbOne {
+  top: 6rem;
+  left: -8rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(103, 223, 255, 0.11);
+}
+
+.orbTwo {
+  right: -6rem;
+  bottom: 18%;
+  width: 16rem;
+  height: 16rem;
+  background: rgba(111, 247, 195, 0.12);
+}

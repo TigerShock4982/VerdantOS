@@ -1,0 +1,232 @@
+.hero {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summaryCard {
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.summaryLabel,
+.summaryDetail {
+  color: var(--muted);
+}
+
+.summaryValue {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.trackStack {
+  display: grid;
+  gap: 1rem;
+}
+
+.trackLane {
+  padding: 1.2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.trackHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.trackTitle {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.trackMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.directionPill,
+.speedPill {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(129, 181, 255, 0.14);
+  background: rgba(4, 17, 28, 0.64);
+}
+
+.directionPill {
+  color: var(--teal);
+}
+
+.speedPill {
+  color: var(--muted);
+}
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  padding: 0.25rem 0;
+}
+
+.railGlow {
+  position: absolute;
+  inset: 1rem 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(103, 223, 255, 0.08), rgba(111, 247, 195, 0.12), rgba(103, 223, 255, 0.08));
+  filter: blur(22px);
+}
+
+.flow {
+  --duration: 24s;
+  --gap: 1rem;
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap);
+  width: max-content;
+  will-change: transform;
+}
+
+.forward {
+  animation: forwardMotion var(--duration) linear infinite;
+}
+
+.reverse {
+  animation: reverseMotion var(--duration) linear infinite;
+}
+
+.trayCard {
+  width: clamp(8.9rem, 11vw, 11.15rem);
+  min-height: 13.4rem;
+  padding: 0.95rem;
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  border-radius: 24px;
+  border: 1px solid rgba(129, 181, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(103, 223, 255, 0.06), rgba(255, 255, 255, 0.015)),
+    rgba(5, 18, 29, 0.86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.trayVisual {
+  height: 4.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.trayImage {
+  width: 3.6rem;
+  height: 3.6rem;
+  object-fit: contain;
+}
+
+.trayMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.trayId {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.trayCultivar {
+  min-height: 2.7rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.stateChip {
+  padding: 0.32rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.stateGrowing {
+  color: var(--teal);
+  background: rgba(111, 247, 195, 0.14);
+}
+
+.stateHarvesting {
+  color: var(--amber);
+  background: rgba(255, 196, 95, 0.16);
+}
+
+.stateEmpty {
+  color: var(--muted);
+  background: rgba(136, 161, 185, 0.14);
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.progressRow strong {
+  color: var(--text);
+}
+
+.progressTrack {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--teal));
+  box-shadow: 0 0 12px rgba(103, 223, 255, 0.4);
+}
+
+@keyframes forwardMotion {
+  from {
+    transform: translateX(calc(-50% - var(--gap) / 2));
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes reverseMotion {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - var(--gap) / 2));
+  }
+}
+
+@media (max-width: 980px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
