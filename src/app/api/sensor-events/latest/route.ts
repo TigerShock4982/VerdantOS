@@ -1,26 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseReadConfig } from "@/lib/supabase-config";
 import type { SensorEventRecord } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return { url, key };
-}
-
 export async function GET() {
-  const config = getSupabaseConfig();
+  const config = getSupabaseReadConfig();
 
-  if (!config) {
+  if (!config.url || !config.key) {
     return NextResponse.json(
-      { event: null, error: "Supabase server environment is not configured." },
+      { event: null, error: "Supabase read configuration is not available." },
       { status: 200 },
     );
   }

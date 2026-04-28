@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseReadConfig } from "@/lib/supabase-config";
 import type { SensorEventRecord } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,20 +14,20 @@ function isSet(value: string | undefined) {
 }
 
 export async function GET() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const readConfig = getSupabaseReadConfig();
   const serialPort = process.env.SERIAL_PORT ?? DEFAULT_SERIAL_PORT;
   const serialBaud = process.env.SERIAL_BAUD ?? DEFAULT_SERIAL_BAUD;
   const deviceId = process.env.DEVICE_ID ?? DEFAULT_DEVICE_ID;
   const env = {
-    supabaseUrl: isSet(supabaseUrl),
-    serviceRoleKey: isSet(serviceRoleKey),
+    supabaseUrl: Boolean(readConfig.url),
+    readKey: Boolean(readConfig.key),
+    serviceRoleKey: isSet(process.env.SUPABASE_SERVICE_ROLE_KEY),
     serialPort,
     serialBaud,
     deviceId,
   };
 
-  if (!env.supabaseUrl || !env.serviceRoleKey || !supabaseUrl || !serviceRoleKey) {
+  if (!readConfig.url || !readConfig.key) {
     return NextResponse.json({
       env,
       supabase: {
@@ -34,12 +35,12 @@ export async function GET() {
         tableReady: false,
         latestEvent: null,
         latestAgeSeconds: null,
-        error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing.",
+        error: "Supabase read configuration is not available.",
       },
     });
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  const supabase = createClient(readConfig.url, readConfig.key, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

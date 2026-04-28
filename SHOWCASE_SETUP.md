@@ -30,7 +30,7 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` is used only by the local serial bridge and the Next.js server API route. Do not prefix it with `NEXT_PUBLIC_`.
+`SUPABASE_SERVICE_ROLE_KEY` is used only by the local serial bridge for inserts. The deployed dashboard can read with the publishable key fallback in the app code. Do not prefix the service role key with `NEXT_PUBLIC_`.
 
 ## Find Arduino Uno R3 Serial Port On Fedora KDE
 
@@ -78,7 +78,7 @@ That PPFD conversion is approximate and depends on the grow light spectrum.
 npm run dev
 ```
 
-Open the local Next.js URL. The Dashboard polls `/api/sensor-events/latest`, which safely reads Supabase on the server using the service role key. The browser never receives that key.
+Open the local Next.js URL. The Dashboard polls `/api/sensor-events/latest`, which safely reads Supabase on the server. The browser never receives the service role key.
 
 ## Full Showcase Flow
 

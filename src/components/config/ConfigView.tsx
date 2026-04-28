@@ -9,6 +9,7 @@ type StatusTone = "good" | "watch" | "bad";
 interface ConfigStatus {
   env: {
     supabaseUrl: boolean;
+    readKey: boolean;
     serviceRoleKey: boolean;
     serialPort: string;
     serialBaud: string;
@@ -154,8 +155,8 @@ export function ConfigView() {
               <span className="eyebrow">Server environment</span>
               <h2 className={styles.moduleTitle}>Secrets and Runtime</h2>
             </div>
-            <span className={`${styles.badge} ${styles[status?.env.supabaseUrl && status.env.serviceRoleKey ? "good" : "bad"]}`}>
-              {status?.env.supabaseUrl && status.env.serviceRoleKey ? "Configured" : "Missing"}
+            <span className={`${styles.badge} ${styles[status?.env.supabaseUrl && status.env.readKey ? "good" : "bad"]}`}>
+              {status?.env.supabaseUrl && status.env.readKey ? "Configured" : "Missing"}
             </span>
           </div>
 
@@ -165,8 +166,12 @@ export function ConfigView() {
               <strong>{status?.env.supabaseUrl ? "Set" : "Missing"}</strong>
             </div>
             <div className={styles.checkRow}>
+              <span>Publishable read key</span>
+              <strong>{status?.env.readKey ? "Available" : "Missing"}</strong>
+            </div>
+            <div className={styles.checkRow}>
               <span>SUPABASE_SERVICE_ROLE_KEY</span>
-              <strong>{status?.env.serviceRoleKey ? "Set server-side" : "Missing"}</strong>
+              <strong>{status?.env.serviceRoleKey ? "Set for inserts" : "Local bridge only"}</strong>
             </div>
             <div className={styles.checkRow}>
               <span>DEVICE_ID</span>

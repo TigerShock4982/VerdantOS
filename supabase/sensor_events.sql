@@ -28,3 +28,22 @@ create index if not exists sensor_events_ts_desc_idx
 
 create index if not exists sensor_events_device_idx
   on public.sensor_events (device);
+
+alter table public.sensor_events enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'sensor_events'
+      and policyname = 'Allow public dashboard reads'
+  ) then
+    create policy "Allow public dashboard reads"
+      on public.sensor_events
+      for select
+      to anon
+      using (true);
+  end if;
+end $$;
