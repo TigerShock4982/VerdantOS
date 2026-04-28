@@ -55,11 +55,11 @@ const schemaColumns = [
 
 function toneLabel(tone: StatusTone) {
   if (tone === "good") {
-    return "Ready";
+    return "Live";
   }
 
   if (tone === "watch") {
-    return "Check";
+    return "Stale";
   }
 
   return "Blocked";
@@ -137,7 +137,7 @@ export function ConfigView() {
         </div>
 
         <aside className={`${styles.statusPanel} ${styles[`tone${liveTone}`]}`}>
-          <span className={styles.statusLabel}>Live Pipeline</span>
+          <span className={styles.statusLabel}>Pipeline Status</span>
           <strong>{toneLabel(liveTone)}</strong>
           <span>
             {statusError ??
