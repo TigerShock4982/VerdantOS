@@ -1,4 +1,4 @@
-# Showcase Setup
+# Live Ingestion Setup
 
 This setup uses an Arduino Uno R3 over USB serial as the live sensor source.
 
@@ -80,10 +80,10 @@ npm run dev
 
 Open the local Next.js URL. The Dashboard polls `/api/sensor-events/latest`, which safely reads Supabase on the server. The browser never receives the service role key.
 
-## Full Showcase Flow
+## Full Ingestion Flow
 
 1. Arduino Uno R3 runs `Sensors.ino` at `9600` baud and prints a sensor block about every 2 seconds.
 2. Laptop runs `npm run bridge:serial`.
 3. Bridge parses each full serial block and inserts into Supabase `sensor_events`.
 4. Dashboard polls the server API route for the newest event.
-5. Dashboard displays the latest readings, PPFD light value, last updated time, and a stale indicator when the newest row is older than about 10 seconds.
+5. Dashboard displays the latest readings, PPFD light value, last received time, and a stale indicator when the newest row is older than about 10 seconds.

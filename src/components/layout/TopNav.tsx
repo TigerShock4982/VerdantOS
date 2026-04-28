@@ -8,7 +8,7 @@ import styles from "@/components/layout/TopNav.module.css";
 
 const DASHBOARD_FALLBACK = "\uD83E\uDDED";
 const HISTORY_FALLBACK = "\uD83D\uDCC8";
-const TRAYS_FALLBACK = "\uD83D\uDEE4\uFE0F";
+const ALERTS_FALLBACK = "\u26A0\uFE0F";
 const CONFIG_FALLBACK = "\u2699\uFE0F";
 const LOGO_FALLBACK = "\uD83C\uDF3F";
 
@@ -26,10 +26,10 @@ const navItems = [
     fallback: HISTORY_FALLBACK,
   },
   {
-    href: "/trays",
-    label: "Trays",
-    icon: "/images/trays-icon.svg",
-    fallback: TRAYS_FALLBACK,
+    href: "/alerts",
+    label: "Alerts",
+    icon: "/images/alert-danger.webp",
+    fallback: ALERTS_FALLBACK,
   },
   {
     href: "/config",

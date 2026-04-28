@@ -94,7 +94,7 @@
   background: rgba(103, 223, 255, 0.12);
 }
 
-.cached {
+.stale {
   color: var(--amber);
   background: rgba(255, 196, 95, 0.12);
 }

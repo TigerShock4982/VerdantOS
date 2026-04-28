@@ -5,10 +5,8 @@ import type {
   HistoryRange,
   SensorEventPayload,
   TelemetrySnapshot,
-  TrayLane,
-  TrayState,
-  TrayUnit,
 } from "@/lib/types";
+import { calibrateLightPpfd } from "@/lib/light-calibration";
 
 export const HISTORY_RANGE_HOURS: Record<HistoryRange, number> = {
   "24h": 24,
@@ -19,11 +17,11 @@ export const HISTORY_RANGE_HOURS: Record<HistoryRange, number> = {
 export const FARMS: FarmIdentity[] = [
   {
     id: "atlas-north",
-    name: "Arduino Uno R3 Showcase",
+    name: "Arduino Uno R3 Farm",
     zone: "USB Serial Bench",
     deviceLabel: "Arduino Uno R3",
     deviceCount: 1,
-    cultivarFocus: "Live sensor demo",
+    cultivarFocus: "Live sensor monitoring",
     connectionState: "online",
   },
   {
@@ -45,22 +43,6 @@ export const FARMS: FarmIdentity[] = [
     connectionState: "online",
   },
 ];
-
-const trayCultivars = [
-  "Butterhead",
-  "Lacinato Kale",
-  "Thai Basil",
-  "Mizuna",
-  "Romaine",
-  "Cilantro",
-  "Baby Chard",
-];
-
-const trayStates: TrayState[] = ["Growing", "Harvesting", "Empty"];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
 
 function round(value: number, precision = 1) {
   return Number(value.toFixed(precision));
@@ -133,7 +115,8 @@ export class MockSensorGenerator {
     this.sequence += 1;
     const eventSeed = hashSeed(`${this.deviceId}:${this.sequence}:${timestamp.getTime()}`);
     const nextRandom = createSeededRandom(eventSeed);
-    const lux = randomInteger(nextRandom, 200, 800);
+    const lux = randomInteger(nextRandom, 18_000, 26_500);
+    const ppfd = calibrateLightPpfd(lux);
 
     return {
       type: "sensor",
@@ -152,7 +135,7 @@ export class MockSensorGenerator {
       },
       light: {
         lux,
-        ppfd: lux / 54,
+        ppfd: round(ppfd, 1),
       },
       level: {
         float: nextRandom() > 0.24 ? 1 : 0,
@@ -166,7 +149,7 @@ function mapEventToTelemetrySnapshot(
   event: SensorEventPayload,
   nextRandom: () => number,
 ): TelemetrySnapshot {
-  const lightPpfd = event.light.ppfd || event.light.lux / 54;
+  const lightPpfd = event.light.ppfd || round(calibrateLightPpfd(event.light.lux), 1);
 
   return {
     farmId,
@@ -238,55 +221,6 @@ export function buildLiveSensorEvents(farmId: string, frames = 30, now = Date.no
   });
 }
 
-function createTrayUnit(laneIndex: number, trayIndex: number): TrayUnit {
-  const state = trayStates[(laneIndex + trayIndex) % trayStates.length];
-  const cultivar =
-    state === "Empty"
-      ? "Awaiting Load"
-      : trayCultivars[(laneIndex * 3 + trayIndex) % trayCultivars.length];
-
-  return {
-    id: `TR-${laneIndex + 1}${trayIndex + 1}`,
-    cultivar,
-    state,
-    progress:
-      state === "Empty"
-        ? 8
-        : state === "Harvesting"
-          ? 84 - trayIndex * 4
-          : 42 + ((laneIndex + trayIndex) % 5) * 9,
-  };
-}
-
-export const TRAY_LANES: TrayLane[] = [
-  {
-    id: "lane-1",
-    label: "Propagation Transfer",
-    direction: "forward",
-    speedSeconds: 24,
-    trays: Array.from({ length: 7 }, (_, index) => createTrayUnit(0, index)),
-  },
-  {
-    id: "lane-2",
-    label: "Harvest Return",
-    direction: "reverse",
-    speedSeconds: 28,
-    trays: Array.from({ length: 7 }, (_, index) => createTrayUnit(1, index)),
-  },
-  {
-    id: "lane-3",
-    label: "Growth Delivery",
-    direction: "forward",
-    speedSeconds: 22,
-    trays: Array.from({ length: 7 }, (_, index) => createTrayUnit(2, index)),
-  },
-];
-
 export function getFarmById(farmId: string) {
   return FARMS.find((farm) => farm.id === farmId) ?? FARMS[0];
-}
-
-export function getSharedTrayWaterLevel(farmId = FARMS[0].id) {
-  const telemetry = buildLiveTelemetry(farmId, 1)[0];
-  return clamp(telemetry.water.level, 20, 90);
 }

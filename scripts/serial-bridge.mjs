@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { SerialPort } from "serialport";
@@ -8,8 +7,6 @@ const DEFAULT_PORT = "/dev/ttyACM0";
 const DEFAULT_BAUD = 9600;
 const BLOCK_END = "-----------------------------------";
 const RECONNECT_DELAY_MS = 3000;
-const RECENT_HASH_LIMIT = 50;
-
 function loadEnvFile(path) {
   if (!existsSync(path)) {
     return;
@@ -57,8 +54,6 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
-const recentHashes = [];
-const recentHashSet = new Set();
 let lineBuffer = "";
 let blockLines = [];
 let reconnectTimer = null;
@@ -122,27 +117,7 @@ function parseArduinoBlock(rawText) {
   };
 }
 
-function rememberHash(hash) {
-  recentHashes.push(hash);
-  recentHashSet.add(hash);
-
-  while (recentHashes.length > RECENT_HASH_LIMIT) {
-    const removed = recentHashes.shift();
-
-    if (removed) {
-      recentHashSet.delete(removed);
-    }
-  }
-}
-
 async function insertBlock(rawText) {
-  const hash = createHash("sha256").update(rawText).digest("hex");
-
-  if (recentHashSet.has(hash)) {
-    console.log("Skipped duplicate serial block.");
-    return;
-  }
-
   let record;
 
   try {
@@ -150,7 +125,6 @@ async function insertBlock(rawText) {
   } catch (error) {
     console.error(`Parse failed: ${error instanceof Error ? error.message : String(error)}`);
     console.error(rawText);
-    rememberHash(hash);
     return;
   }
 
@@ -160,8 +134,6 @@ async function insertBlock(rawText) {
     console.error(`Supabase insert failed: ${error.message}`);
     return;
   }
-
-  rememberHash(hash);
   console.log(
     `Inserted ${record.device} ${record.ts} air=${record.air_temp_c ?? "null"}C water=${record.water_temp_c ?? "null"}C pH=${record.ph ?? "null"} light=${record.light_ppfd === null ? "null" : record.light_ppfd.toFixed(1)} PPFD`,
   );

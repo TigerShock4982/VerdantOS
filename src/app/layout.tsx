@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { FarmProvider } from "@/components/farms/FarmContext";
 import { AppShell } from "@/components/layout/AppShell";
 import { PwaRegistrar } from "@/components/pwa/PwaRegistrar";
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | VerdantOS",
   },
   description:
-    "Premium progressive web app for vertical farm monitoring, tray automation, and historical environmental analysis.",
+    "Premium progressive web app for vertical farm monitoring, live sensor ingestion, and historical environmental analysis.",
   applicationName: "VerdantOS Control Room",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -75,7 +76,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PwaRegistrar />
-        <AppShell>{children}</AppShell>
+        <FarmProvider>
+          <AppShell>{children}</AppShell>
+        </FarmProvider>
         <Analytics />
       </body>
     </html>

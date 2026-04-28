@@ -1,9 +1,16 @@
 export type ConnectionState = "online" | "offline";
-export type LiveStatus = "live" | "cached";
+export type LiveStatus = "live" | "stale";
 export type HistoryRange = "24h" | "72h" | "7d";
-export type TrayState = "Growing" | "Harvesting" | "Empty";
-export type LaneDirection = "forward" | "reverse";
 export type FloatSensorState = 0 | 1;
+export type AlertSeverity = "warning" | "critical";
+export type AlertMetric =
+  | "connection"
+  | "air.temperature"
+  | "air.humidity"
+  | "water.temperature"
+  | "water.ph"
+  | "water.level"
+  | "light.ppfd";
 
 export interface FarmIdentity {
   id: string;
@@ -65,19 +72,17 @@ export interface HistoryPoint extends TelemetrySnapshot {
   index: number;
 }
 
-export interface TrayUnit {
+export interface TelemetryAlert {
   id: string;
-  cultivar: string;
-  state: TrayState;
-  progress: number;
-}
-
-export interface TrayLane {
-  id: string;
-  label: string;
-  direction: LaneDirection;
-  speedSeconds: number;
-  trays: TrayUnit[];
+  farmId: string;
+  farmName: string;
+  metric: AlertMetric;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  detectedAt: string;
+  value?: string;
+  threshold?: string;
 }
 
 export interface SensorEventPayload {

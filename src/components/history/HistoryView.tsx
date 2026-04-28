@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSelectedFarm } from "@/components/farms/FarmContext";
 import { MetricChartPanel } from "@/components/history/MetricChartPanel";
 import {
   FARMS,
   HISTORY_RANGE_HOURS,
   buildHistoricalSeries,
-  getFarmById,
 } from "@/lib/mock-data";
 import {
   average,
@@ -24,9 +24,8 @@ const RANGE_ARROW = "\u2192";
 const MID_DOT = "\u00B7";
 
 export function HistoryView() {
-  const [activeFarmId, setActiveFarmId] = useState(FARMS[0].id);
+  const { activeFarmId, farm, setActiveFarmId } = useSelectedFarm();
   const [range, setRange] = useState<HistoryRange>("72h");
-  const farm = getFarmById(activeFarmId);
 
   const data = useMemo(
     () => buildHistoricalSeries(activeFarmId, HISTORY_RANGE_HOURS[range]),
@@ -41,7 +40,7 @@ export function HistoryView() {
     const waterPh = data.map((point) => point.water.ph);
     const waterEc = data.map((point) => point.water.ec);
     const waterLevel = data.map((point) => point.water.level);
-    const lux = data.map((point) => point.light.lux);
+    const hours = HISTORY_RANGE_HOURS[range];
 
     return [
       {
@@ -66,11 +65,11 @@ export function HistoryView() {
       },
       {
         label: "Dataset density",
-        value: `${formatInteger(data.length)} pts ${MID_DOT} ${formatMetric(maximum(lux), "lumens", 0)}`,
-        detail: "Captured points and peak lumens",
+        value: `${formatInteger(data.length)} pts ${MID_DOT} ${formatMetric(data.length / hours, "pts/hr", 2)}`,
+        detail: "Captured points inside the selected time window",
       },
     ];
-  }, [data]);
+  }, [data, range]);
 
   const charts = [
     {
@@ -111,7 +110,7 @@ export function HistoryView() {
     },
     {
       title: "Water Loop",
-      description: "Reservoir thermal response and fill level across tray circulation.",
+      description: "Reservoir thermal response and fill level across the circulation loop.",
       series: [
         {
           key: "water.temperature",
@@ -154,14 +153,14 @@ export function HistoryView() {
       ],
     },
     {
-      title: "Light Intensity",
-      description: "Lumens history for fixture output and photoperiod consistency.",
+      title: "Canopy Light",
+      description: "PPFD history for fixture output and photoperiod consistency.",
       series: [
         {
-          key: "light.lux",
-          label: "Lumens",
+          key: "light.ppfd",
+          label: "PPFD",
           color: "#d8ff72",
-          unit: "lumens",
+          unit: "PPFD",
           precision: 0,
           axisId: "left" as const,
         },
@@ -176,10 +175,7 @@ export function HistoryView() {
           <div className={styles.heading}>
             <span className="eyebrow">Historical analytics</span>
             <h1 className="pageTitle">Sensor History</h1>
-            <p className="pageLead">
-              Review time-series performance for {farm.name} with seeded operational data that is
-              ready to be replaced by a backend pipeline later.
-            </p>
+            <p className="pageLead">Review time-series performance for {farm.name}.</p>
           </div>
 
           <div className={styles.controlStack}>

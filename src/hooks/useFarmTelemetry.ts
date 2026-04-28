@@ -1,8 +1,16 @@
 "use client";
 
 import { startTransition, useEffect, useMemo, useState } from "react";
+import { evaluateTelemetryAlerts, recordTelemetryAlerts } from "@/lib/alerts";
+import { getFarmById } from "@/lib/mock-data";
+import { getCalibratedLightPpfd } from "@/lib/light-calibration";
 import { buildLiveTelemetry } from "@/lib/mock-data";
-import type { LiveStatus, SensorEventRecord, TelemetrySnapshot } from "@/lib/types";
+import type {
+  LiveStatus,
+  SensorEventRecord,
+  TelemetryAlert,
+  TelemetrySnapshot,
+} from "@/lib/types";
 
 const STALE_AFTER_MS = 10_000;
 const POLL_INTERVAL_MS = 2_000;
@@ -110,7 +118,7 @@ function mapSensorEventToSnapshot(
   const waterLevel =
     event.water_level_ok === null ? fallback.water.level : event.water_level_ok ? 72 : 18;
   const lightLux = valueOrFallback(event.light_lux, fallback.light.lux);
-  const lightPpfd = valueOrFallback(event.light_ppfd, lightLux / 54);
+  const lightPpfd = getCalibratedLightPpfd(lightLux, event.light_ppfd) ?? fallback.light.ppfd;
 
   return {
     farmId,
@@ -188,6 +196,7 @@ function storeSnapshot(farmId: string, snapshot: TelemetrySnapshot) {
 }
 
 export function useFarmTelemetry(farmId: string) {
+  const farm = useMemo(() => getFarmById(farmId), [farmId]);
   const sequence = useMemo(() => buildLiveTelemetry(farmId), [farmId]);
   const latest = sequence[sequence.length - 1];
   const [snapshot, setSnapshot] = useState<TelemetrySnapshot>(latest);
@@ -255,7 +264,8 @@ export function useFarmTelemetry(farmId: string) {
         setLatestEvent(payload.event);
 
         const nextSnapshot = mapSensorEventToSnapshot(farmId, payload.event, latest);
-        const updateTime = new Date(nextSnapshot.timestamp);
+        const heartbeatTime = payload.event.created_at ?? payload.event.ts ?? nextSnapshot.timestamp;
+        const updateTime = new Date(heartbeatTime);
 
         startTransition(() => {
           setSnapshot(nextSnapshot);
@@ -264,7 +274,7 @@ export function useFarmTelemetry(farmId: string) {
         setLastUpdate(Number.isNaN(updateTime.getTime()) ? new Date() : updateTime);
         storeSnapshot(farmId, nextSnapshot);
       } catch {
-        setLatestEvent(null);
+        return;
       }
     };
 
@@ -277,8 +287,16 @@ export function useFarmTelemetry(farmId: string) {
     };
   }, [farmId, isOnline, latest]);
 
-  const isStale = !latestEvent || now - lastUpdate.getTime() > STALE_AFTER_MS;
-  const liveStatus: LiveStatus = isOnline && !isStale ? "live" : "cached";
+  const isStale = now - lastUpdate.getTime() > STALE_AFTER_MS;
+  const liveStatus: LiveStatus = !isStale ? "live" : "stale";
+  const alerts = useMemo<TelemetryAlert[]>(
+    () => evaluateTelemetryAlerts(farm, snapshot, lastUpdate, now),
+    [farm, lastUpdate, now, snapshot],
+  );
+
+  useEffect(() => {
+    recordTelemetryAlerts(farmId, alerts);
+  }, [alerts, farmId]);
 
   return {
     snapshot,
@@ -287,5 +305,6 @@ export function useFarmTelemetry(farmId: string) {
     liveStatus,
     latestEvent,
     isStale,
+    alerts,
   };
 }

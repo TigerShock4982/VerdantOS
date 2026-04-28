@@ -132,7 +132,7 @@ export function ConfigView() {
           <h1 className="pageTitle">Config</h1>
           <p className="pageLead">
             Arduino Uno R3 serial bridge, Supabase ingestion, and dashboard read path are wired
-            here for the showcase deployment.
+            here for the production deployment.
           </p>
         </div>
 

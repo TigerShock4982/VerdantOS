@@ -1,12 +1,13 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { SensorCard } from "@/components/dashboard/SensorCard";
+import { useSelectedFarm } from "@/components/farms/FarmContext";
 import { AssetImage } from "@/components/ui/AssetImage";
 import { useFarmTelemetry } from "@/hooks/useFarmTelemetry";
 import { formatMetric, formatTimestamp } from "@/lib/format";
-import { FARMS, getFarmById } from "@/lib/mock-data";
+import { FARMS } from "@/lib/mock-data";
 import styles from "@/components/dashboard/DashboardView.module.css";
 
 const AIR_FALLBACK = "\uD83C\uDF2C\uFE0F";
@@ -20,10 +21,10 @@ function formatOptionalMetric(value: number | null, unit: string, precision = 1)
 }
 
 export function DashboardView() {
-  const [activeFarmId, setActiveFarmId] = useState(FARMS[0].id);
-  const farm = getFarmById(activeFarmId);
-  const { snapshot, lastUpdate, isOnline, liveStatus, latestEvent, isStale } =
-    useFarmTelemetry(activeFarmId);
+  const { activeFarmId, farm, setActiveFarmId } = useSelectedFarm();
+  const { snapshot, lastUpdate, isOnline, liveStatus, latestEvent } = useFarmTelemetry(
+    activeFarmId,
+  );
 
   const airTemperature = latestEvent ? latestEvent.air_temp_c : snapshot.air.temperature;
   const humidity = latestEvent ? latestEvent.humidity_pct : snapshot.air.humidity;
@@ -143,9 +144,9 @@ export function DashboardView() {
         icon: "/images/light-icon.svg",
         fallback: LIGHT_FALLBACK,
         accent: "lime" as const,
-        heroLabel: "Light Intensity",
+        heroLabel: "Canopy PPFD",
         heroValue: formatOptionalMetric(lightPpfd, "PPFD", 1),
-        trend: "Fixture banks are delivering a uniform vegetative profile.",
+        trend: "Fixture banks are delivering calibrated photosynthetic light output.",
         metrics: [],
       },
     ],
@@ -212,7 +213,7 @@ export function DashboardView() {
               ))}
             </select>
             <span className={styles.metaHint}>
-              Ready to swap later with farm-level device routing.
+              Selected farm stays in sync across dashboard and history.
             </span>
           </div>
 
@@ -226,18 +227,12 @@ export function DashboardView() {
             <span className={styles.metaLabel}>Live Status</span>
             <div className={`${styles.liveBadge} ${styles[liveStatus]}`}>
               <span className="statusDot" />
-              <strong>
-                {liveStatus === "live"
-                  ? "Live Feed"
-                  : isStale
-                    ? "Stale Snapshot"
-                    : "Cached Snapshot"}
-              </strong>
+              <strong>{liveStatus === "live" ? "Live Feed" : "Stale Snapshot"}</strong>
             </div>
             <span className={styles.metaHint}>
               {latestEvent
-                ? "Reading latest Supabase sensor event from the Arduino bridge."
-                : "Waiting for the first Supabase sensor event from the Arduino bridge."}
+                ? `Reading latest sensor event for ${farm.name}.`
+                : `Waiting for the first sensor event for ${farm.name}.`}
             </span>
           </div>
         </div>
