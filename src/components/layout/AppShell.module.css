@@ -1,60 +1,22 @@
 .shell {
   position: relative;
   min-height: 100vh;
-  padding: 0.8rem 0.8rem calc(7rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.45rem 0.45rem calc(6.4rem + env(safe-area-inset-bottom, 0px));
 }
 
 .main {
   position: relative;
   z-index: 1;
   width: min(100%, var(--max-width));
-  margin: 1rem auto 0;
-}
-
-.orbOne,
-.orbTwo {
-  position: fixed;
-  z-index: 0;
-  border-radius: 999px;
-  filter: blur(80px);
-  pointer-events: none;
-}
-
-.orbOne {
-  top: 3rem;
-  left: -9rem;
-  width: 13rem;
-  height: 13rem;
-  background: rgba(103, 223, 255, 0.11);
-}
-
-.orbTwo {
-  right: -6rem;
-  bottom: 10%;
-  width: 12rem;
-  height: 12rem;
-  background: rgba(111, 247, 195, 0.12);
+  margin: 0.65rem auto 0;
 }
 
 @media (min-width: 980px) {
   .shell {
-    padding: 1.2rem clamp(1rem, 2.8vw, 2rem) calc(7rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.8rem clamp(0.75rem, 1.8vw, 1.4rem) calc(6.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .main {
-    margin-top: 1.6rem;
-  }
-
-  .orbOne {
-    top: 6rem;
-    left: -8rem;
-    width: 18rem;
-    height: 18rem;
-  }
-
-  .orbTwo {
-    bottom: 18%;
-    width: 16rem;
-    height: 16rem;
+    margin-top: 0.9rem;
   }
 }

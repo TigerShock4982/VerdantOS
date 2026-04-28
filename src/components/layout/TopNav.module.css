@@ -1,13 +1,13 @@
 .wrap {
   position: sticky;
-  top: 0.5rem;
+  top: 0.2rem;
   z-index: 40;
 }
 
 .topBar {
   width: min(100%, var(--max-width));
   margin: 0 auto;
-  padding: 0.9rem;
+  padding: 0.8rem 0.9rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -46,8 +46,8 @@
 .bottomDock {
   position: fixed;
   left: 50%;
-  bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
-  width: min(calc(100% - 1.6rem), 42rem);
+  bottom: calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 0.9rem), 42rem);
   transform: translateX(-50%);
   z-index: 60;
   display: grid;
@@ -156,7 +156,7 @@
   }
 
   .bottomDock {
-    width: min(calc(100% - 2rem), 46rem);
+    width: min(calc(100% - 1.5rem), 46rem);
   }
 }
 
@@ -166,7 +166,7 @@
   }
 
   .topBar {
-    padding: 0.95rem 1.15rem;
+    padding: 0.9rem 1rem;
   }
 
   .brand {
@@ -174,7 +174,7 @@
   }
 
   .bottomDock {
-    width: min(calc(100% - 2rem), 52rem);
+    width: min(calc(100% - 1.5rem), 52rem);
   }
 
   .navItem {

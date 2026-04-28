@@ -1,28 +1,14 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { buildLiveTelemetry } from "@/lib/mock-data";
-import type { LiveStatus, TelemetrySnapshot } from "@/lib/types";
+import type { LiveStatus, SensorEventRecord, TelemetrySnapshot } from "@/lib/types";
+
+const STALE_AFTER_MS = 10_000;
+const POLL_INTERVAL_MS = 2_000;
 
 function storageKey(farmId: string) {
   return `verdantos:v3:last-snapshot:${farmId}`;
-}
-
-function toIsoWithOffset(date: Date) {
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absoluteMinutes = Math.abs(offsetMinutes);
-  const offsetHours = String(Math.floor(absoluteMinutes / 60)).padStart(2, "0");
-  const offsetRemainingMinutes = String(absoluteMinutes % 60).padStart(2, "0");
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
-  const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${sign}${offsetHours}:${offsetRemainingMinutes}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -83,6 +69,7 @@ function normalizeSnapshot(
       },
       light: {
         lux: toNumber(rawLight.lux, toNumber(light.lux, fallback.light.lux)),
+        ppfd: toNumber(rawLight.ppfd, toNumber(light.ppfd, fallback.light.ppfd)),
       },
       level: {
         float: rawLevel.float === 0 || rawLevel.float === 1 ? rawLevel.float : levelFloat,
@@ -99,11 +86,84 @@ function normalizeSnapshot(
       ec: toNumber(water.ec, fallback.water.ec),
       level: toNumber(water.level, fallback.water.level),
       levelFloat,
+      levelText: toStringValue(water.levelText, fallback.water.levelText ?? ""),
     },
     light: {
       lux: toNumber(light.lux, fallback.light.lux),
+      ppfd: toNumber(light.ppfd, fallback.light.ppfd),
     },
   };
+}
+
+function valueOrFallback(value: number | null, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function mapSensorEventToSnapshot(
+  farmId: string,
+  event: SensorEventRecord,
+  fallback: TelemetrySnapshot,
+): TelemetrySnapshot {
+  const timestamp = event.ts ?? event.created_at ?? new Date().toISOString();
+  const waterLevelFloat =
+    event.water_level_ok === null ? fallback.water.levelFloat : event.water_level_ok ? 1 : 0;
+  const waterLevel =
+    event.water_level_ok === null ? fallback.water.level : event.water_level_ok ? 72 : 18;
+  const lightLux = valueOrFallback(event.light_lux, fallback.light.lux);
+  const lightPpfd = valueOrFallback(event.light_ppfd, lightLux / 54);
+
+  return {
+    farmId,
+    deviceId: event.device ?? fallback.deviceId,
+    sequence: fallback.sequence + 1,
+    timestamp,
+    connectionState: "online",
+    rawEvent: {
+      type: "sensor",
+      ts: timestamp,
+      device: event.device ?? fallback.deviceId,
+      seq: fallback.sequence + 1,
+      air: {
+        t_c: valueOrFallback(event.air_temp_c, fallback.air.temperature),
+        rh_pct: valueOrFallback(event.humidity_pct, fallback.air.humidity),
+        p_hpa: fallback.air.pressure,
+      },
+      water: {
+        t_c: valueOrFallback(event.water_temp_c, fallback.water.temperature),
+        ph: valueOrFallback(event.ph, fallback.water.ph),
+        ec_ms_cm: fallback.water.ec,
+      },
+      light: {
+        lux: lightLux,
+        ppfd: lightPpfd,
+      },
+      level: {
+        float: waterLevelFloat,
+      },
+    },
+    air: {
+      temperature: valueOrFallback(event.air_temp_c, fallback.air.temperature),
+      humidity: valueOrFallback(event.humidity_pct, fallback.air.humidity),
+      pressure: fallback.air.pressure,
+    },
+    water: {
+      temperature: valueOrFallback(event.water_temp_c, fallback.water.temperature),
+      ph: valueOrFallback(event.ph, fallback.water.ph),
+      ec: fallback.water.ec,
+      level: waterLevel,
+      levelFloat: waterLevelFloat,
+      levelText: event.water_level_text ?? fallback.water.levelText,
+    },
+    light: {
+      lux: lightLux,
+      ppfd: lightPpfd,
+    },
+  };
+}
+
+interface LatestSensorResponse {
+  event: SensorEventRecord | null;
+  error?: string;
 }
 
 function readStoredSnapshot(farmId: string, fallback: TelemetrySnapshot): TelemetrySnapshot | null {
@@ -133,19 +193,16 @@ export function useFarmTelemetry(farmId: string) {
   const [snapshot, setSnapshot] = useState<TelemetrySnapshot>(latest);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date(latest.timestamp));
   const [isOnline, setIsOnline] = useState(true);
-  const indexRef = useRef(sequence.length - 1);
+  const [latestEvent, setLatestEvent] = useState<SensorEventRecord | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const stored = readStoredSnapshot(farmId, latest);
     const nextSnapshot = stored ?? latest;
-    const sequenceIndex = sequence.findIndex(
-      (entry) => entry.timestamp === nextSnapshot.timestamp,
-    );
 
-    indexRef.current = sequenceIndex >= 0 ? sequenceIndex : sequence.length - 1;
     setSnapshot(nextSnapshot);
     setLastUpdate(new Date(nextSnapshot.timestamp));
-  }, [farmId, latest, sequence]);
+  }, [farmId, latest]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -168,42 +225,67 @@ export function useFarmTelemetry(farmId: string) {
   }, []);
 
   useEffect(() => {
-    if (!isOnline) {
-      return undefined;
-    }
-
     const intervalId = window.setInterval(() => {
-      indexRef.current = (indexRef.current + 1) % sequence.length;
-      const now = new Date();
-      const nextTimestamp = toIsoWithOffset(now);
-      const nextSnapshot: TelemetrySnapshot = {
-        ...sequence[indexRef.current],
-        timestamp: nextTimestamp,
-        rawEvent: {
-          ...sequence[indexRef.current].rawEvent,
-          ts: nextTimestamp,
-        },
-      };
-
-      startTransition(() => {
-        setSnapshot(nextSnapshot);
-      });
-
-      setLastUpdate(now);
-      storeSnapshot(farmId, nextSnapshot);
-    }, 4200);
+      setNow(Date.now());
+    }, 1000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [farmId, isOnline, sequence]);
+  }, []);
 
-  const liveStatus: LiveStatus = isOnline ? "live" : "cached";
+  useEffect(() => {
+    if (typeof window === "undefined" || !isOnline) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+
+    const fetchLatest = async () => {
+      try {
+        const response = await fetch("/api/sensor-events/latest", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as LatestSensorResponse;
+
+        if (isCancelled || !payload.event) {
+          return;
+        }
+
+        setLatestEvent(payload.event);
+
+        const nextSnapshot = mapSensorEventToSnapshot(farmId, payload.event, latest);
+        const updateTime = new Date(nextSnapshot.timestamp);
+
+        startTransition(() => {
+          setSnapshot(nextSnapshot);
+        });
+
+        setLastUpdate(Number.isNaN(updateTime.getTime()) ? new Date() : updateTime);
+        storeSnapshot(farmId, nextSnapshot);
+      } catch {
+        setLatestEvent(null);
+      }
+    };
+
+    void fetchLatest();
+    const intervalId = window.setInterval(fetchLatest, POLL_INTERVAL_MS);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [farmId, isOnline, latest]);
+
+  const isStale = !latestEvent || now - lastUpdate.getTime() > STALE_AFTER_MS;
+  const liveStatus: LiveStatus = isOnline && !isStale ? "live" : "cached";
 
   return {
     snapshot,
     lastUpdate,
     isOnline,
     liveStatus,
+    latestEvent,
+    isStale,
   };
 }

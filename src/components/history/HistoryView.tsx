@@ -66,8 +66,8 @@ export function HistoryView() {
       },
       {
         label: "Dataset density",
-        value: `${formatInteger(data.length)} pts ${MID_DOT} ${formatMetric(maximum(lux), "lx", 0)}`,
-        detail: "Captured points and peak lux",
+        value: `${formatInteger(data.length)} pts ${MID_DOT} ${formatMetric(maximum(lux), "lumens", 0)}`,
+        detail: "Captured points and peak lumens",
       },
     ];
   }, [data]);
@@ -155,13 +155,13 @@ export function HistoryView() {
     },
     {
       title: "Light Intensity",
-      description: "Lux history for fixture output and photoperiod consistency.",
+      description: "Lumens history for fixture output and photoperiod consistency.",
       series: [
         {
           key: "light.lux",
-          label: "Lux",
+          label: "Lumens",
           color: "#d8ff72",
-          unit: "lx",
+          unit: "lumens",
           precision: 0,
           axisId: "left" as const,
         },

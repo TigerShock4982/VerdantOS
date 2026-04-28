@@ -19,18 +19,18 @@ export const HISTORY_RANGE_HOURS: Record<HistoryRange, number> = {
 export const FARMS: FarmIdentity[] = [
   {
     id: "atlas-north",
-    name: "Atlas Canopy North",
-    zone: "Brooklyn Stack A",
-    deviceLabel: "ESP32 Mesh A1",
-    deviceCount: 12,
-    cultivarFocus: "Butterhead + Kale",
+    name: "Arduino Uno R3 Showcase",
+    zone: "USB Serial Bench",
+    deviceLabel: "Arduino Uno R3",
+    deviceCount: 1,
+    cultivarFocus: "Live sensor demo",
     connectionState: "online",
   },
   {
     id: "delta-east",
     name: "Delta Array East",
     zone: "Queens Corridor B",
-    deviceLabel: "ESP32 Mesh B4",
+    deviceLabel: "Serial Sensor B4",
     deviceCount: 9,
     cultivarFocus: "Basil + Mint",
     connectionState: "online",
@@ -39,7 +39,7 @@ export const FARMS: FarmIdentity[] = [
     id: "nova-west",
     name: "Nova Grow West",
     zone: "Jersey Module C",
-    deviceLabel: "ESP32 Mesh C2",
+    deviceLabel: "Serial Sensor C2",
     deviceCount: 11,
     cultivarFocus: "Romaine + Arugula",
     connectionState: "online",
@@ -112,7 +112,7 @@ function toIsoWithOffset(date: Date) {
 }
 
 function mapDeviceId(farmId: string) {
-  return `${farmId}-esp32-1`;
+  return farmId === "atlas-north" ? "arduino-uno-r3-1" : `${farmId}-sensor-1`;
 }
 
 function buildReservoirPercent(levelFloat: FloatSensorState, nextRandom: () => number) {
@@ -133,6 +133,7 @@ export class MockSensorGenerator {
     this.sequence += 1;
     const eventSeed = hashSeed(`${this.deviceId}:${this.sequence}:${timestamp.getTime()}`);
     const nextRandom = createSeededRandom(eventSeed);
+    const lux = randomInteger(nextRandom, 200, 800);
 
     return {
       type: "sensor",
@@ -150,7 +151,8 @@ export class MockSensorGenerator {
         ec_ms_cm: randomBetween(nextRandom, 1.0, 1.8, 2),
       },
       light: {
-        lux: randomInteger(nextRandom, 200, 800),
+        lux,
+        ppfd: lux / 54,
       },
       level: {
         float: nextRandom() > 0.24 ? 1 : 0,
@@ -164,6 +166,8 @@ function mapEventToTelemetrySnapshot(
   event: SensorEventPayload,
   nextRandom: () => number,
 ): TelemetrySnapshot {
+  const lightPpfd = event.light.ppfd || event.light.lux / 54;
+
   return {
     farmId,
     deviceId: event.device,
@@ -185,6 +189,7 @@ function mapEventToTelemetrySnapshot(
     },
     light: {
       lux: event.light.lux,
+      ppfd: lightPpfd,
     },
   };
 }

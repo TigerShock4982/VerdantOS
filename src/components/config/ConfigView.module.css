@@ -10,32 +10,42 @@
   gap: 0.55rem;
 }
 
-.noticePanel {
-  display: grid;
-  gap: 0.85rem;
-  align-content: start;
-  padding: 1rem;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 106, 139, 0.12);
-  background: rgba(255, 106, 139, 0.06);
-}
-
-.noticeImage {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 18px;
-  object-fit: cover;
-}
-
-.noticeCopy {
+.statusPanel {
   display: grid;
   gap: 0.35rem;
+  align-content: start;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(129, 181, 255, 0.12);
+  background: rgba(4, 17, 28, 0.56);
   color: var(--muted);
   line-height: 1.5;
 }
 
-.noticeCopy strong {
+.statusPanel strong {
   color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+}
+
+.statusLabel {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.tonegood {
+  border-color: rgba(111, 247, 195, 0.22);
+  background: rgba(111, 247, 195, 0.08);
+}
+
+.tonewatch {
+  border-color: rgba(255, 196, 95, 0.22);
+  background: rgba(255, 196, 95, 0.08);
+}
+
+.tonebad {
+  border-color: rgba(255, 106, 139, 0.22);
+  background: rgba(255, 106, 139, 0.08);
 }
 
 .grid {
@@ -44,7 +54,8 @@
   gap: 1rem;
 }
 
-.moduleCard {
+.moduleCard,
+.runbook {
   padding: 1.2rem;
   display: grid;
   gap: 1rem;
@@ -52,7 +63,7 @@
 
 .moduleHead {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -63,13 +74,33 @@
   font-size: 1.45rem;
 }
 
-.comingSoon {
+.badge {
+  flex: 0 0 auto;
   min-height: 2.35rem;
   padding: 0.55rem 0.8rem;
   border-radius: 999px;
+  border: 1px solid rgba(129, 181, 255, 0.12);
+  background: rgba(4, 17, 28, 0.56);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.good {
+  color: var(--teal);
+  border-color: rgba(111, 247, 195, 0.18);
+  background: rgba(111, 247, 195, 0.1);
+}
+
+.watch {
   color: var(--amber);
-  background: rgba(255, 196, 95, 0.12);
-  border: 1px solid rgba(255, 196, 95, 0.16);
+  border-color: rgba(255, 196, 95, 0.18);
+  background: rgba(255, 196, 95, 0.1);
+}
+
+.bad {
+  color: var(--danger);
+  border-color: rgba(255, 106, 139, 0.18);
+  background: rgba(255, 106, 139, 0.1);
 }
 
 .moduleDescription {
@@ -78,61 +109,85 @@
   line-height: 1.65;
 }
 
-.placeholderList {
+.checkList {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
-.placeholderRow {
+.checkRow,
+.commandRow {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  justify-content: space-between;
+  gap: 0.85rem;
   min-height: 3rem;
   padding: 0.85rem 0.95rem;
-  border-radius: 18px;
+  border-radius: var(--radius-sm);
   background: rgba(4, 17, 28, 0.56);
   border: 1px solid rgba(129, 181, 255, 0.08);
-  color: var(--text);
-}
-
-.rowDot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 999px;
-  background: var(--cyan);
-  box-shadow: 0 0 12px rgba(103, 223, 255, 0.38);
-}
-
-.moduleFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.ghostButton,
-.solidButton {
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  opacity: 1;
-}
-
-.ghostButton {
   color: var(--muted);
-  border: 1px solid rgba(129, 181, 255, 0.12);
+}
+
+.checkRow strong {
+  color: var(--text);
+  text-align: right;
+}
+
+.schemaGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.schemaGrid span {
+  padding: 0.5rem 0.7rem;
+  border-radius: 999px;
+  color: var(--muted);
   background: rgba(4, 17, 28, 0.56);
+  border: 1px solid rgba(129, 181, 255, 0.08);
+  font-size: 0.82rem;
 }
 
-.solidButton {
+.runbook {
+  align-content: start;
+}
+
+.commandGrid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.commandRow {
+  justify-content: flex-start;
+}
+
+.commandRow span {
+  width: 1.7rem;
+  height: 1.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
   color: #06131b;
-  background: linear-gradient(135deg, var(--teal), var(--cyan));
+  background: var(--teal);
+  font-weight: 800;
 }
 
-.ghostButton:disabled,
-.solidButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.78;
+.commandRow code {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .moduleHead,
+  .checkRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .checkRow strong {
+    text-align: left;
+  }
 }
 
 @media (min-width: 760px) {

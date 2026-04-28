@@ -13,17 +13,29 @@ const AIR_FALLBACK = "\uD83C\uDF2C\uFE0F";
 const WATER_FALLBACK = "\uD83D\uDCA7";
 const LIGHT_FALLBACK = "\uD83D\uDCA1";
 const LOGO_FALLBACK = "\uD83C\uDF3F";
-const TRAY_FALLBACK = "\uD83E\uDDFA";
 const DEGREE_C = "\u00B0C";
+
+function formatOptionalMetric(value: number | null, unit: string, precision = 1) {
+  return value === null ? "No reading" : formatMetric(value, unit, precision);
+}
 
 export function DashboardView() {
   const [activeFarmId, setActiveFarmId] = useState(FARMS[0].id);
   const farm = getFarmById(activeFarmId);
-  const { snapshot, lastUpdate, isOnline, liveStatus } = useFarmTelemetry(activeFarmId);
+  const { snapshot, lastUpdate, isOnline, liveStatus, latestEvent, isStale } =
+    useFarmTelemetry(activeFarmId);
 
-  const brightness = Math.min(100, Math.round((snapshot.light.lux / 7800) * 100));
+  const airTemperature = latestEvent ? latestEvent.air_temp_c : snapshot.air.temperature;
+  const humidity = latestEvent ? latestEvent.humidity_pct : snapshot.air.humidity;
+  const waterTemperature = latestEvent ? latestEvent.water_temp_c : snapshot.water.temperature;
+  const waterPh = latestEvent ? latestEvent.ph : snapshot.water.ph;
+  const lightPpfd = latestEvent ? latestEvent.light_ppfd : snapshot.light.ppfd;
   const reservoirLevel = Math.min(92, Math.max(12, snapshot.water.level));
   const reservoirHealthy = snapshot.water.level >= 50;
+  const waterLevelText =
+    latestEvent?.water_level_text ??
+    snapshot.water.levelText ??
+    (snapshot.water.levelFloat === 1 ? "Liquid detected" : "No liquid detected");
 
   const sensorCards = useMemo(
     () => [
@@ -34,12 +46,12 @@ export function DashboardView() {
         fallback: AIR_FALLBACK,
         accent: "cyan" as const,
         heroLabel: "Air Temperature",
-        heroValue: formatMetric(snapshot.air.temperature, DEGREE_C, 1),
+        heroValue: formatOptionalMetric(airTemperature, DEGREE_C, 1),
         trend: "Humidity and pressure remain inside cultivation band.",
         metrics: [
           {
             label: "Humidity",
-            value: formatMetric(snapshot.air.humidity, "%", 0),
+            value: formatOptionalMetric(humidity, "%", 0),
             hint: "Balanced vapor pressure deficit window",
             tone: "stable" as const,
           },
@@ -58,7 +70,7 @@ export function DashboardView() {
         fallback: WATER_FALLBACK,
         accent: "teal" as const,
         heroLabel: "Water Temperature",
-        heroValue: formatMetric(snapshot.water.temperature, DEGREE_C, 1),
+        heroValue: formatOptionalMetric(waterTemperature, DEGREE_C, 1),
         trend: "Reservoir volume and nutrient chemistry are tracking feed targets.",
         visual: (
           <div
@@ -97,32 +109,17 @@ export function DashboardView() {
                   </div>
                 </div>
               </div>
-              <div className={styles.trayDock}>
-                <span className={styles.visualLabel}>Nutrient tray bay</span>
-                <div className={styles.trayDockShell}>
-                  <div className={styles.trayDockGlow} />
-                  <AssetImage
-                    src="/images/tray.png"
-                    alt="Tray docked in the nutrient bay"
-                    fallback={TRAY_FALLBACK}
-                    className={styles.chamberTray}
-                    fallbackClassName={`${styles.chamberTray} assetFallback`}
-                  />
-                </div>
-              </div>
             </div>
             <div className={styles.chamberStats}>
               <span>{formatMetric(snapshot.water.level, "%", 0)} volume</span>
-              <span>{formatMetric(snapshot.water.ph, "", 2)} pH</span>
-              <span>{formatMetric(snapshot.water.ec, "mS/cm", 2)} EC</span>
-              <span>{snapshot.water.levelFloat === 1 ? "Float high" : "Float low"}</span>
+              <span>{waterLevelText}</span>
             </div>
           </div>
         ),
         metrics: [
           {
             label: "pH",
-            value: formatMetric(snapshot.water.ph, "", 2),
+            value: formatOptionalMetric(waterPh, "", 2),
             hint: "Nutrient uptake is aligned with recipe band",
             tone: "stable" as const,
           },
@@ -147,25 +144,22 @@ export function DashboardView() {
         fallback: LIGHT_FALLBACK,
         accent: "lime" as const,
         heroLabel: "Light Intensity",
-        heroValue: formatMetric(snapshot.light.lux, "lx", 0),
+        heroValue: formatOptionalMetric(lightPpfd, "PPFD", 1),
         trend: "Fixture banks are delivering a uniform vegetative profile.",
-        metrics: [
-          {
-            label: "Brightness",
-            value: formatMetric(brightness, "%", 0),
-            hint: "Fixture output mapped from current lux response",
-            tone: "stable" as const,
-          },
-          {
-            label: "Uniformity",
-            value: formatMetric(96 - Math.abs(78 - brightness) * 0.2, "%", 0),
-            hint: "Cross-lane spread remains tightly controlled",
-            tone: "focus" as const,
-          },
-        ],
+        metrics: [],
       },
     ],
-    [brightness, reservoirHealthy, reservoirLevel, snapshot],
+    [
+      airTemperature,
+      humidity,
+      lightPpfd,
+      reservoirHealthy,
+      reservoirLevel,
+      snapshot,
+      waterLevelText,
+      waterPh,
+      waterTemperature,
+    ],
   );
 
   return (
@@ -183,24 +177,6 @@ export function DashboardView() {
             <div className={styles.identityCopy}>
               <span className="eyebrow">Farm identity</span>
               <h1 className={styles.identityTitle}>{farm.name}</h1>
-              <p className={styles.identitySubtitle}>
-                {farm.zone} / {farm.deviceLabel} / {farm.cultivarFocus}
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.identityStats}>
-            <div className={styles.identityStat}>
-              <span className={styles.identityLabel}>Sensors</span>
-              <strong>{farm.deviceCount}</strong>
-            </div>
-            <div className={styles.identityStat}>
-              <span className={styles.identityLabel}>Mode</span>
-              <strong>Demo-ready</strong>
-            </div>
-            <div className={styles.identityStat}>
-              <span className={styles.identityLabel}>Shell</span>
-              <strong>{isOnline ? "Networked" : "Cached"}</strong>
             </div>
           </div>
         </div>
@@ -250,10 +226,18 @@ export function DashboardView() {
             <span className={styles.metaLabel}>Live Status</span>
             <div className={`${styles.liveBadge} ${styles[liveStatus]}`}>
               <span className="statusDot" />
-              <strong>{liveStatus === "live" ? "Live Feed" : "Cached Snapshot"}</strong>
+              <strong>
+                {liveStatus === "live"
+                  ? "Live Feed"
+                  : isStale
+                    ? "Stale Snapshot"
+                    : "Cached Snapshot"}
+              </strong>
             </div>
             <span className={styles.metaHint}>
-              Built for future ESP32 sensor ingestion and edge buffering.
+              {latestEvent
+                ? "Reading latest Supabase sensor event from the Arduino bridge."
+                : "Waiting for the first Supabase sensor event from the Arduino bridge."}
             </span>
           </div>
         </div>
